@@ -246,9 +246,9 @@ for (gcm in gcmList) {
 evalTypes <- c('geo', 'random')
 
 ## genus constants ##
-genus <- 'fagus'
-speciesList <- paste0('Fagus ', 
-                      c('grandifolia'))
+genus <- 'alnus'
+speciesList <- paste0('Alnus ', 
+                      c('serrulata'))
 
 gcmList <- c('hadley', 'ccsm', 'ecbilt') # general circulation models for env data
 

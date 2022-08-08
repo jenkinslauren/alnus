@@ -120,12 +120,9 @@ getClimRasts <- function(pc, climYear) { # retrieve clipped climate rasters for 
       pcPrediction[i] <- raster::predict(clim[[i]], pca, index = 1:pc)
       names(pcPrediction[[i]]) <- paste0("pc", 1:pc, "_", (i-1)*1000, "KYBP")
     }
-    print("line 126")
     envDataPca <- stack(pcPrediction)
-    print('line 128')
     envYr <- pcPrediction[[(climYear/1000) + 1]] # keep only the PCA rasters for given climate year
     names(envYr) <- paste0('pca', 1:pc) # label layers by pc
-    print('line 131')
     ## sanity check for ensuring the rasters are in the correct projection
     # print("Ensure that the projection of these rasters is WGS84:")
     # print(paste0("Projection of envYr = ", projection(envYr)))
@@ -135,7 +132,7 @@ getClimRasts <- function(pc, climYear) { # retrieve clipped climate rasters for 
     for (n in 1:nlayers(envYr)) { # clip PCAs to study extent for given species
       x <- envYr[[n]]
       y <- studyRegionRasts[[(climYear/1000) + 1]]
-      y <- projectExtent(y, getCRS('wgs84'))
+      y <- projectExtent(y, crs(x))
       x <- crop(x, y)
       projection(x) <- getCRS('wgs84')
       envDataClipped[[n]] <- x
@@ -226,16 +223,18 @@ getPollen <- function(times) {
     maps <- stack(paste0('/Volumes/lj_mac_22/pollen/predictions-', 
                          toupper(genus), '_meanpred.tif'))
     
-    ### mask by glaciers and available land ###
+    ### mask by glaciers and available land
+    
     daltonAges <- read.csv('/Volumes/lj_mac_22/Dalton et al 2020 QSR Ice Layers/Dalton et al 2020 QSR Dates from Shapefile Names.csv')
     
-    # mask by land (for visualization) #
+    # mask by land--for visualization
+    times <- seq(0, -21000, by = -1000)
     for (countTime in seq_along(times)) {
       time <- times[countTime]
       
       # land mask
-      land <- raster(paste0('/Volumes/lj_mac_22/MOBOT/by_genus/env_data/ccsm/tifs/', 
-                            time, 'BP/an_avg_TMAX.tif'))
+      land <- raster(paste0('/Volumes/lj_mac_22/MOBOT/by_genus/env_data/ccsm//tifs/', 
+                            -1 * time, 'BP/an_avg_TMAX.tif'))
       # land <- land * 0 + 1
       land <- projectRaster(land, maps)
       land <- land * 0 + 1
@@ -243,7 +242,8 @@ getPollen <- function(times) {
       
     }
     
-    ### mask by ice (for calculating BV) ### 
+    ### mask by ice -- for calculating BV
+    
     mapsMasked <- maps
     
     for (countTime in seq_along(times)) {
@@ -637,6 +637,10 @@ for(sp in speciesList) {
     names(studyRegionRasts) <- c(paste0(tools::toTitleCase(genus), 
                                         "_pollen_predictions_", 0:21, "kybp"))
     
+    # put study regions in reverse order (from 21 KYBP to 0 KYBP)
+    studyRegionRasts <- unstack(studyRegionRasts)
+    studyRegionRasts <- stack(rev(studyRegionRasts))
+    
     envData <- getClimRasts(pc, climYear) # retrieve clipped env data for given climate year
     
     recordsFileName <- paste0('./species_records/03_', 
@@ -796,10 +800,6 @@ for(sp in speciesList) {
     outputFileName <- paste0('./models/predictions/', speciesAb_, 
                              '/GCM_', gcm, '_PC', pc, '.rData')
     save(bg, range, envMap, envModel, records, file = outputFileName, overwrite = T)
-    
-    # put study regions in reverse order (from 21 KYBP to 0 KYBP)
-    studyRegionRasts <- unstack(studyRegionRasts)
-    studyRegionRasts <- stack(rev(studyRegionRasts))
     
     if(!dir.exists('./predictions')) dir.create('./predictions') # create directory to store predictions
     
