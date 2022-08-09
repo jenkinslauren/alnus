@@ -55,7 +55,7 @@ if(cluster == T) { # constants for running on cluster
 } else { # constants for running locally
   ## genus constants ##
   genus <- 'alnus'
-  speciesList <- paste0('Alnus ', c('serrulata'))
+  speciesList <- paste0('Alnus ', c('incana', 'serrulata'))
   
   baseFolder <- '/Volumes/lj_mac_22/MOBOT/by_genus/'
   setwd(paste0(baseFolder, genus))
@@ -333,20 +333,22 @@ for(sp in speciesList) {
   
   # load Little range map for given species
   if (cluster == T) {
-    range <- paste0('./USTreeAtlas/SHP/', 
+    rangeFileName <- paste0('./USTreeAtlas/SHP/', 
                     tolower(gsub('_', '', speciesAb_)), '/',
                     tolower(gsub('_', '', speciesAb_)),
                     '.shp')
   } else {
-    range <- paste0('/Volumes/lj_mac_22/MOBOT/USTreeAtlas/SHP/', 
+    rangeFileName <- paste0('/Volumes/lj_mac_22/MOBOT/USTreeAtlas/SHP/', 
                     tolower(gsub('_', '', speciesAb_)), '/',
                     tolower(gsub('_', '', speciesAb_)),
                     '.shp')
   }
   
-  range <- suppressWarnings(shapefile(range))
-  projection(range) <- enmSdm::getCRS('nad27')
-  range <- range[range$CODE == 1, ] # remove holes
+  range <- suppressWarnings(shapefile(rangeFileName))
+  if(!sp == 'Alnus incana') {
+    projection(range) <- enmSdm::getCRS('nad27')
+    range <- range[range$CODE == 1, ] # remove holes
+  }
   
   # if (file.exists) {
   #   print('Occurrences already downloaded from BIEN!\n')
@@ -828,7 +830,7 @@ for(sp in speciesList) {
                            full.names = T))
     
     
-    save.image(paste0('./workspaces/06 - predictions (', gcm, ')'))
+    save.image(paste0('./workspaces/06 - ', sp, ' predictions (', gcm, ')'))
     
   }
 }
